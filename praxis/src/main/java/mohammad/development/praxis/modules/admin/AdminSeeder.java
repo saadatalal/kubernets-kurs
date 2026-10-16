@@ -21,15 +21,27 @@ public class AdminSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (adminRepository.count() > 0) return;
+        Admin admin = adminRepository.findByUsername("admin").orElse(null);
 
-        Admin admin = new Admin();
-        admin.setUsername("admin");
-        admin.setPasswordHash(passwordEncoder.encode(adminDefaultPassword));
-        admin.setRoles(Set.of("ADMIN"));
+        if (admin == null) {
+            admin = new Admin();
+            admin.setUsername("admin");
+            admin.setRoles(Set.of("ADMIN"));
+            admin.setEnabled(true);
+        }
+
         admin.setEnabled(true);
+        admin.setRoles(Set.of("ADMIN"));
+
+        String encodedPassword = passwordEncoder.encode(adminDefaultPassword);
+        if (admin.getPasswordHash() == null || !passwordEncoder.matches(adminDefaultPassword, admin.getPasswordHash())) {
+            admin.setPasswordHash(encodedPassword);
+            adminRepository.save(admin);
+            System.out.println("✅ Synced admin password from ADMIN_DEFAULT_PASSWORD");
+            return;
+        }
 
         adminRepository.save(admin);
-        System.out.println("✅ Seeded initial admin user: admin / admin");
+        System.out.println("✅ Admin account is valid and ready for login");
     }
 }

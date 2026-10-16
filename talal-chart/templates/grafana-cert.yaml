@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: talal-grafana-tls
+  namespace: talal
+spec:
+  
+  dnsNames:
+    - talal-grafana.infra-x.cloud
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: praxis-form-letsencrypt-prod
+  secretName: talal-grafana-tls
+  usages:
+    - digital signature
+    - key encipherment

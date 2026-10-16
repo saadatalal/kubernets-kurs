@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: backend-deployment
+  namespace: talal
+  labels:
+    app: backend
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
+
+      containers:
+        - name: backend
+          image: ghcr.io/saadatalal/backend:v1
+          imagePullPolicy: Always
+
+          env:
+            - name: MONGODB_URI
+              value: "mongodb://praxis-form-mongodb.praxis.svc.cluster.local:27017/talal-praxis"
+            - name: JWT_EXP_MINUTES
+              value: "120"  
+            - name: ADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: ADMIN_DEFAULT_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: JWT_SECRET      
+
+
+          ports:
+            - containerPort: 8080

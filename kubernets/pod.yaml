@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx 
+  namespace: talal
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+
+
+  - name: nginx-cl
+    image: busybox
+    command: 
+    - sleep
+    - "3600"
+
+  - name: mysql
+    image: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      value: "test"
+    
+
+    
+  

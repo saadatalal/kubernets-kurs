@@ -70,3 +70,10 @@ tmp/
 *.swo
 config.toml
 AGENTS.md
+
+# Local Kubernetes credentials; create these as cluster Secrets instead.
+/kubernets/token
+/kubernets/scret.ghcr.yaml
+/kubernets/backemend-sercrets.yaml
+/talal-chart/templates/backemend-sercrets.yaml
+/talal-chart/talal-chart.yaml

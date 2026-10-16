@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 API_URL="${API_URL:-http://localhost:8080}"
 

@@ -184,54 +184,27 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/frontend:${{ github.sha }}
             ghcr.io/${{ env.REPO_LC }}/frontend:latest
 
-  # ============================================
-  # DEPLOY JOB (manuell via Helm auf Kubernetes)
-  # ============================================
-
+  #// deploy
   deploy:
     runs-on: ubuntu-latest
     needs: [docker-backend, docker-frontend]
     if: github.event_name == 'workflow_dispatch'
-    environment:
-      name: ${{ inputs.cluster }}
     env:
-      NAMESPACE: praxis
+      NAMESPACE: talal
     steps:
+      - name: Set lowercase repo name
+        run: echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
       - uses: actions/checkout@v4
-      - name: Set up Helm
+      - name: Setup helm
         uses: azure/setup-helm@v4
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v4
-      - name: Configure kubeconfig
+      - name: setup kubconfig
         run: |
           mkdir -p $HOME/.kube
-          if [ "${{ inputs.cluster }}" = "infra-x" ]; then
-            echo "${{ secrets.KUBECONFIG_INFRA_X }}" | base64 -d > $HOME/.kube/config
-          else
-            echo "${{ secrets.KUBECONFIG_INFRA_X_2 }}" | base64 -d > $HOME/.kube/config
-          fi
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 --d > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
-      - name: Select cluster context
-        run: |
-          if [ "${{ inputs.cluster }}" = "infra-x" ]; then
-            kubectl config use-context kubernetes-admin@infra-x
-          else
-            kubectl config use-context kubernetes-admin@infra-x-2
-          fi
       - name: Deploy with Helm
-        working-directory: ./chart
+        working-directory: talal-chart
         run: |
-          if [ "${{ inputs.cluster }}" = "infra-x" ]; then
-            DOMAIN="kubernetes.praxis-form.de"
-            GRAFANA_HOST="grafana-mohammad.praxis-form.de"
-          else
-            DOMAIN="kubernetes2.praxis-form.de"
-            GRAFANA_HOST="grafana-mohammad2.praxis-form.de"
-          fi
-          helm dependency update
-          helm upgrade --install praxis-form . \
-            --create-namespace -n "${NAMESPACE}" \
-            --set global.domain="${DOMAIN}" \
-            --set grafana.ingress.hosts[0]="${GRAFANA_HOST}" \
-            --set grafana.ingress.tls[0].hosts[0]="${GRAFANA_HOST}"
-
+          helm upgrade --install talal-praxis-form --create-namespace -n "${NAMESPACE}" \
+            --set backend.image.repository=ghcr.io/${{ env.REPO_LC }}/backend \
+            --set frontend.image.repository=ghcr.io/${{ env.REPO_LC }}/frontend

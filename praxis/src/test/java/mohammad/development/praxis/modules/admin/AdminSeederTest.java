@@ -8,9 +8,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -27,12 +30,13 @@ class AdminSeederTest {
     @BeforeEach
     void setUp() {
         adminSeeder = new AdminSeeder(adminRepository, passwordEncoder);
+        ReflectionTestUtils.setField(adminSeeder, "adminDefaultPassword", "test-password");
     }
 
     @Test
-    void run_noExistingAdmins_createsAdmin() throws Exception {
-        when(adminRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded-password");
+    void run_noExistingAdmin_createsAdminWithConfiguredPassword() {
+        when(adminRepository.findByUsername("admin")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("test-password")).thenReturn("encoded-password");
 
         adminSeeder.run();
 
@@ -47,31 +51,39 @@ class AdminSeederTest {
     }
 
     @Test
-    void run_existingAdmins_doesNotCreateAdmin() throws Exception {
-        when(adminRepository.count()).thenReturn(1L);
+    void run_existingAdminWithMatchingPassword_keepsPasswordHash() {
+        Admin existingAdmin = existingAdmin("encoded-password");
+        when(adminRepository.findByUsername("admin")).thenReturn(Optional.of(existingAdmin));
+        when(passwordEncoder.matches("test-password", "encoded-password")).thenReturn(true);
 
         adminSeeder.run();
 
-        verify(adminRepository, never()).save(any(Admin.class));
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(adminRepository).save(existingAdmin);
+        assertEquals("encoded-password", existingAdmin.getPasswordHash());
+        assertEquals(Set.of("ADMIN"), existingAdmin.getRoles());
+        assertTrue(existingAdmin.isEnabled());
     }
 
     @Test
-    void run_multipleExistingAdmins_doesNotCreateAdmin() throws Exception {
-        when(adminRepository.count()).thenReturn(5L);
+    void run_existingAdminWithDifferentPassword_updatesPasswordHash() {
+        Admin existingAdmin = existingAdmin("old-encoded-password");
+        when(adminRepository.findByUsername("admin")).thenReturn(Optional.of(existingAdmin));
+        when(passwordEncoder.matches("test-password", "old-encoded-password")).thenReturn(false);
+        when(passwordEncoder.encode("test-password")).thenReturn("new-encoded-password");
 
         adminSeeder.run();
 
-        verify(adminRepository, never()).save(any(Admin.class));
+        verify(adminRepository).save(existingAdmin);
+        assertEquals("new-encoded-password", existingAdmin.getPasswordHash());
     }
 
-    @Test
-    void run_withArgs_ignoresArgs() throws Exception {
-        when(adminRepository.count()).thenReturn(0L);
-        when(passwordEncoder.encode(any())).thenReturn("encoded-password");
-
-        adminSeeder.run("arg1", "arg2", "arg3");
-
-        verify(adminRepository).save(any(Admin.class));
+    private Admin existingAdmin(String passwordHash) {
+        Admin admin = new Admin();
+        admin.setUsername("admin");
+        admin.setPasswordHash(passwordHash);
+        admin.setRoles(Set.of("ADMIN"));
+        admin.setEnabled(true);
+        return admin;
     }
 }
-

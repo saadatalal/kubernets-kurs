@@ -33,9 +33,8 @@ public class AdminSeeder implements CommandLineRunner {
         admin.setEnabled(true);
         admin.setRoles(Set.of("ADMIN"));
 
-        String encodedPassword = passwordEncoder.encode(adminDefaultPassword);
         if (admin.getPasswordHash() == null || !passwordEncoder.matches(adminDefaultPassword, admin.getPasswordHash())) {
-            admin.setPasswordHash(encodedPassword);
+            admin.setPasswordHash(passwordEncoder.encode(adminDefaultPassword));
             adminRepository.save(admin);
             System.out.println("✅ Synced admin password from ADMIN_DEFAULT_PASSWORD");
             return;

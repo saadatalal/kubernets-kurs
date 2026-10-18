@@ -205,6 +205,4 @@ jobs:
       - name: Deploy with Helm
         working-directory: talal-chart
         run: |
-          helm upgrade --install talal-praxis-form --create-namespace -n "${NAMESPACE}" \
-            --set backend.image.repository=ghcr.io/${{ env.REPO_LC }}/backend \
-            --set frontend.image.repository=ghcr.io/${{ env.REPO_LC }}/frontend
+          helm upgrade --install talal-praxis-form . --namespace talal --create-namespace --set-string backend.image.repository=ghcr.io/${{ env.REPO_LC }}/backend --set-string frontend.image.repository=ghcr.io/${{ env.REPO_LC }}/frontend

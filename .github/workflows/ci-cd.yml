@@ -204,5 +204,11 @@ jobs:
           chmod 600 $HOME/.kube/config
       - name: Deploy with Helm
         working-directory: talal-chart
-        run: |
-          helm upgrade --install talal-praxis-form . --namespace talal --create-namespace --set-string backend.image.repository=ghcr.io/${{ env.REPO_LC }}/backend --set-string frontend.image.repository=ghcr.io/${{ env.REPO_LC }}/frontend
+        run: >-
+          helm upgrade --install talal-praxis-form .
+          --namespace "${NAMESPACE}"
+          --create-namespace
+          --set-string backend.image.repository=ghcr.io/${{ env.REPO_LC }}/backend
+          --set-string backend.image.tag=${{ github.sha }}
+          --set-string frontend.image.repository=ghcr.io/${{ env.REPO_LC }}/frontend
+          --set-string frontend.image.tag=${{ github.sha }}
